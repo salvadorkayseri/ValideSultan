@@ -1,0 +1,70 @@
+{
+  "project_info": {
+    "project_number": "325691550581",
+    "project_id": "forumapp-275f9",
+    "storage_bucket": "forumapp-275f9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:325691550581:android:489bf18268d2b692b8c13c",
+        "android_client_info": {
+          "package_name": "com.anonymous.ForumApp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "325691550581-tstve1amgrnjh7o0ng66imfoqpgllbsg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.anonymous.ForumApp",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "325691550581-und4tvcfs23bsnchqnbelpvpnijul8p7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.anonymous.ForumApp",
+            "certificate_hash": "1dc6b8e14f1c8b07687788d88152191e2751a1c0"
+          }
+        },
+        {
+          "client_id": "325691550581-v9ev4cmi75ebjuh0u1ogse5m8g50ohkv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.anonymous.ForumApp",
+            "certificate_hash": "64387713a4d1525e652398cb0d7eaacbee51573e"
+          }
+        },
+        {
+          "client_id": "325691550581-peofpi0pg1610q32ov2p5j3hdhpbl3vn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA4xmmp5nzUvQWW96G1yynefv0wwgTua2s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "325691550581-dq63loqgmrgs4mj6frurfd321nac8l1e.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "325691550581-766edipt3p0262ht4h182f0iq82f76ej.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.anonymous.forumapp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

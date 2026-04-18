@@ -1,0 +1,169 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userPath(uid) {
+      return /databases/$(database)/documents/kullanicilar/$(uid);
+    }
+
+    function isAdmin() {
+      return signedIn() && (
+        request.auth.token.email in ['admin@forumapp.com'] ||
+        (
+          exists(userPath(request.auth.uid)) &&
+          get(userPath(request.auth.uid)).data.rol in ['admin', 'moderator']
+        )
+      );
+    }
+
+    function cezaAktif(uid) {
+      return exists(userPath(uid)) &&
+        ('otoModerasyon' in get(userPath(uid)).data) &&
+        ('cezaBitis' in get(userPath(uid)).data.otoModerasyon) &&
+        (get(userPath(uid)).data.otoModerasyon.cezaBitis is timestamp) &&
+        get(userPath(uid)).data.otoModerasyon.cezaBitis > request.time;
+    }
+
+    function girisYasagiAktif(uid) {
+      return exists(userPath(uid)) && (
+        (
+          ('moderasyon' in get(userPath(uid)).data) &&
+          ('suresizBan' in get(userPath(uid)).data.moderasyon) &&
+          get(userPath(uid)).data.moderasyon.suresizBan == true
+        ) ||
+        (
+          ('moderasyon' in get(userPath(uid)).data) &&
+          ('girisYasagiBitis' in get(userPath(uid)).data.moderasyon) &&
+          (get(userPath(uid)).data.moderasyon.girisYasagiBitis is timestamp) &&
+          get(userPath(uid)).data.moderasyon.girisYasagiBitis > request.time
+        )
+      );
+    }
+
+    function hesapAktif(uid) {
+      return signedIn() && request.auth.uid == uid && !girisYasagiAktif(uid);
+    }
+
+    function yaziYazabilir(uid) {
+      return hesapAktif(uid) && !cezaAktif(uid);
+    }
+
+    function guvenliArkadasEkleme(uid) {
+      return signedIn() &&
+        request.auth.uid != uid &&
+        request.resource.data.diff(resource.data).changedKeys().hasOnly(['arkadaslar']) &&
+        request.resource.data.arkadaslar is list &&
+        request.resource.data.arkadaslar.hasAny([request.auth.uid]) &&
+        request.resource.data.arkadaslar.hasAll(
+          ('arkadaslar' in resource.data) ? resource.data.arkadaslar : []
+        ) &&
+        request.resource.data.arkadaslar.size() ==
+          (('arkadaslar' in resource.data) ? resource.data.arkadaslar.size() + 1 : 1);
+    }
+
+    match /kullanicilar/{uid} {
+      allow read: if signedIn() && (
+        request.auth.uid == uid ||
+        (!girisYasagiAktif(request.auth.uid))
+      );
+      allow create: if signedIn() && request.auth.uid == uid;
+      allow update: if (hesapAktif(uid) && request.auth.uid == uid) || isAdmin() || guvenliArkadasEkleme(uid);
+      allow delete: if isAdmin();
+
+      match /bildirimler/{bildirimId} {
+        allow read: if hesapAktif(uid);
+        allow create: if isAdmin() || (
+          yaziYazabilir(request.auth.uid) &&
+          request.resource.data.gonderenId == request.auth.uid
+        );
+        allow update: if hesapAktif(uid);
+        allow delete: if hesapAktif(uid);
+      }
+
+      match /arkadasIstekleri/{istekId} {
+        allow read: if hesapAktif(request.auth.uid) && (
+          request.auth.uid == uid ||
+          resource.data.gonderenId == request.auth.uid ||
+          isAdmin()
+        );
+
+        allow create: if hesapAktif(request.auth.uid) &&
+          request.auth.uid != uid &&
+          request.resource.data.gonderenId == request.auth.uid &&
+          request.resource.data.durum == 'beklemede';
+
+        allow update: if signedIn() && (request.auth.uid == uid || isAdmin());
+        allow delete: if signedIn() && (request.auth.uid == uid || isAdmin());
+      }
+    }
+
+    match /konular/{konuId} {
+      allow read: if !signedIn() || !girisYasagiAktif(request.auth.uid);
+      allow create: if yaziYazabilir(request.auth.uid) &&
+        request.resource.data.yazarId == request.auth.uid;
+      allow update: if !girisYasagiAktif(request.auth.uid) && signedIn() && (
+        (resource.data.yazarId == request.auth.uid && !cezaAktif(request.auth.uid)) ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+
+      match /begeniler/{uid} {
+        allow read: if !signedIn() || !girisYasagiAktif(request.auth.uid);
+        allow create, delete: if signedIn() &&
+          !girisYasagiAktif(request.auth.uid) &&
+          request.auth.uid == uid;
+        allow update: if false;
+      }
+
+      match /yanitlar/{yanitId} {
+        allow read: if !signedIn() || !girisYasagiAktif(request.auth.uid);
+        allow create: if yaziYazabilir(request.auth.uid);
+        allow update: if !girisYasagiAktif(request.auth.uid) && signedIn() && (
+          (!cezaAktif(request.auth.uid) && resource.data.yazar == request.auth.token.email) ||
+          isAdmin()
+        );
+        allow delete: if isAdmin();
+
+        match /begeniler/{uid} {
+          allow read: if !signedIn() || !girisYasagiAktif(request.auth.uid);
+          allow create, delete: if signedIn() &&
+            !girisYasagiAktif(request.auth.uid) &&
+            request.auth.uid == uid;
+          allow update: if false;
+        }
+      }
+    }
+
+    match /raporlar/{raporId} {
+      allow read: if isAdmin();
+      // Rapor göndermek, yazma kısıtı olsa bile güvenlik için açık kalmalı.
+      allow create: if hesapAktif(request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    match /revactaIcerikler/{icerikId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+
+      match /begeniler/{uid} {
+        allow read: if true;
+        allow create, delete: if signedIn() && request.auth.uid == uid;
+        allow update: if false;
+      }
+
+      match /yanitlar/{yanitId} {
+        allow read: if true;
+        allow create: if yaziYazabilir(request.auth.uid) &&
+          request.resource.data.yazarId == request.auth.uid;
+        allow update, delete: if signedIn() && (
+          resource.data.yazarId == request.auth.uid ||
+          isAdmin()
+        );
+      }
+    }
+  }
+}
+

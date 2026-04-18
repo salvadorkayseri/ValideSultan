@@ -1,0 +1,14 @@
+# Keep EAS upload small; dependencies/native artifacts are restored/generated on build workers.
+node_modules/
+.gradle-local/
+.gradle-home/
+android/
+dist/
+.expo/
+tmp-aab-icon/
+*.aab
+firebase-debug.log
+
+# Never upload local VCS/editor data
+.git/
+.vscode/
