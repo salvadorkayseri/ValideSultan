@@ -19,6 +19,18 @@ expo-env.d.ts
 *.mobileprovision
 credentials.json
 
+# Android/Gradle local caches and build outputs
+.gradle-home/
+.gradle-local/
+.gradle/
+**/.gradle/
+*.aab
+*.apk
+
+# Firebase local tool state/logs
+.firebase-config/
+firebase-debug.log
+
 # Metro
 .metro-health-check*
 
